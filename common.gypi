@@ -462,6 +462,10 @@
             'defines': [ '_GLIBCXX_USE_C99_MATH' ],
             'libraries': [ '-llog' ],
           }],
+          ['_toolset=="target" and target_arch == "arm"', {
+            'defines': [ '_LIBCPP_HAS_NO_OFF_T_FUNCTIONS' ],
+          }],
+          
           ['_toolset=="host"', {
             'cflags': [ '-pthread' ],
             'ldflags': [ '-pthread' ],
