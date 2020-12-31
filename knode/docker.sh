@@ -9,8 +9,8 @@ set -x
 # - x86
 # - x86_64
 
-if [ $# -lt 2 ]; then
-  echo "$0 should have at least 4 parameters: command, target_arch"
+if [ $# -lt 3 ]; then
+  echo "$0 should have at least 3 parameters: command, target_arch, output"
   exit 1
 fi
 set -e
@@ -18,9 +18,13 @@ set -x
 
 COMMAND=$1
 ARCH=$2
+OUTPUT=$3
 
 NODE_SOURCE=`dirname $PWD`
 IMAGE_NAME=ndk20b
+
+
+mkdir -p "$OUTPUT"
 
 case $COMMAND in
 configure)
@@ -30,14 +34,14 @@ configure)
 
   docker container run -it \
     --mount type=bind,source="$NODE_SOURCE",target=/node \
-    $IMAGE_NAME /node/build.sh configure "$ARCH"
+    --mount type=bind,source="$OUTPUT",target=/output \
+    $IMAGE_NAME /node/build.sh configure "$ARCH" "$OUTPUT"
   ;;
 make)
-  mkdir -p "$OUTPUT"
   echo building "$ARCH"
   docker container run -it \
     --mount type=bind,source="$NODE_SOURCE",target=/node \
-    $IMAGE_NAME /node/build.sh make "$ARCH"
+    $IMAGE_NAME /node/build.sh make "$ARCH" "$OUTPUT"
   ;;
 *)
   echo "Unsupported command provided: $COMMAND"
