@@ -1230,6 +1230,8 @@ static ssize_t uv__fs_copyfile(uv_fs_t* req) {
 #endif  /* !__linux__ */
   }
 
+// disable ficlone on Android
+#ifndef __ANDROID__
 #ifdef FICLONE
   if (req->flags & UV_FS_COPYFILE_FICLONE ||
       req->flags & UV_FS_COPYFILE_FICLONE_FORCE) {
@@ -1251,6 +1253,7 @@ static ssize_t uv__fs_copyfile(uv_fs_t* req) {
   }
 #endif
 
+#endif
   bytes_to_send = src_statsbuf.st_size;
   in_offset = 0;
   while (bytes_to_send != 0) {
