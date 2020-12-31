@@ -175,7 +175,9 @@ void ares_library_cleanup(void)
     ares_win32_cleanup();
 
 #if defined(ANDROID) || defined(__ANDROID__)
-  ares_library_cleanup_android();
+  if (ares_library_android_initialized() == ARES_SUCCESS) {
+    ares_library_cleanup_android();
+  }
 #endif
 
   ares_init_flags = ARES_LIB_INIT_NONE;
