@@ -51,6 +51,8 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <map>
+#include <string>
 
 namespace node {
 
@@ -943,6 +945,28 @@ struct EnvSerializeInfo {
   friend std::ostream& operator<<(std::ostream& o, const EnvSerializeInfo& i);
 };
 
+class FileAccessor {
+public:
+    static const int kNone = 0;
+    static const int kRead = 1;
+    static const int kWrite = 2;
+
+    bool Access(Environment *env, const char *path, int mask, char *fullpath);
+
+    void Mount(const char *path, int mask);
+
+    std::string Cwd();
+
+    bool Chdir(Environment *env, const char *path);
+
+    static FileAccessor *Shared();
+
+private:
+    std::map<const std::string, int, std::greater<std::string>> accesses_;
+    std::string cwd_;
+    Environment *env_;
+};
+
 class Environment : public MemoryRetainer {
  public:
   Environment(const Environment&) = delete;
@@ -957,6 +981,7 @@ class Environment : public MemoryRetainer {
   void MemoryInfo(MemoryTracker* tracker) const override;
 
   EnvSerializeInfo Serialize(v8::SnapshotCreator* creator);
+  FileAccessor* Accessor() { return accessor_; }
   void CreateProperties();
   void DeserializeProperties(const EnvSerializeInfo* info);
 
@@ -1560,6 +1585,8 @@ class Environment : public MemoryRetainer {
   // a given pointer.
   std::unordered_map<char*, std::unique_ptr<v8::BackingStore>>
       released_allocated_buffers_;
+  
+  FileAccessor* accessor_;
 };
 
 }  // namespace node

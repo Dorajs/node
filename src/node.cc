@@ -459,17 +459,18 @@ MaybeLocal<Value> StartExecution(Environment* env, StartExecutionCallback cb) {
       InternalCallbackScope::kSkipAsyncHooks);
 
   if (cb != nullptr) {
-    EscapableHandleScope scope(env->isolate());
+      // EscapableHandleScope scope(env->isolate());
 
-    if (StartExecution(env, "internal/bootstrap/environment").IsEmpty())
-      return {};
+      // if (StartExecution(env, "internal/bootstrap/environment").IsEmpty())
+      //   return {};
 
-    StartExecutionCallbackInfo info = {
-      env->process_object(),
-      env->native_module_require(),
-    };
+      StartExecutionCallbackInfo info = {
+              env->process_object(),
+              env->native_module_require(),
+      };
 
-    return scope.EscapeMaybe(cb(info));
+      // return scope.EscapeMaybe(cb(info));
+      cb(info);
   }
 
   if (env->worker_context() != nullptr) {

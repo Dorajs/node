@@ -11,6 +11,8 @@
 
 namespace node {
 namespace fs {
+  
+  v8::Local<v8::Value> CheckedPath(node::Environment *env, v8::Local<v8::Value> path, int mask);
 
 class FileHandleReadWrap;
 
