@@ -35,13 +35,14 @@ configure)
   docker container run -it \
     --mount type=bind,source="$NODE_SOURCE",target=/node \
     --mount type=bind,source="$OUTPUT",target=/output \
-    $IMAGE_NAME /node/build.sh configure "$ARCH" "$OUTPUT"
+    $IMAGE_NAME ./build.sh configure "$ARCH" /output
   ;;
 make)
   echo building "$ARCH"
   docker container run -it \
     --mount type=bind,source="$NODE_SOURCE",target=/node \
-    $IMAGE_NAME /node/build.sh make "$ARCH" "$OUTPUT"
+    --mount type=bind,source="$OUTPUT",target=/output \
+    $IMAGE_NAME ./build.sh make "$ARCH" /output
   ;;
 *)
   echo "Unsupported command provided: $COMMAND"
