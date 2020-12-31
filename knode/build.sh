@@ -9,7 +9,7 @@
 # 'npm config set arch=<arch>'
 
 if [ $# -lt 2 ]; then
-  echo "$0 should have at least 2 parameters: command, target_arch"
+  echo "$0 should have at least 2 parameters: command, target_arch, output"
   exit 1
 fi
 set -e
@@ -17,6 +17,7 @@ set -x
 
 COMMAND=$1
 ARCH=$2
+OUTPUT=$3
 
 CC_VER="4.9"
 
@@ -51,13 +52,9 @@ esac
 
 ANDROID_SDK_VERSION=23
 
-PREFIX="${NODE_SOURCE}/out/${ABI}"
-mkdir -p "PREFIX"
-
 NODE_SOURCE=`dirname $PWD`
-
-OUTPUT="$PWD"/artifacts/"${ABI}"
-mkdir -p "$OUTPUT"
+PREFIX="$OUTPUT"/"${ABI}"
+mkdir -p "$PREFIX"
 
 BUILD_DIR="$PWD"/build/"$ARCH"
 LINK_DIR=`dirname $PWD`/out
@@ -141,9 +138,6 @@ make)
 
   make -j${WORKER_COUNT}
   make install
-
-  cp -r "$PREFIX/lib/libnode.so" "$OUTPUT"
-  cp -r "$PREFIX/include" "$OUTPUT"
   ;;
 *)
   echo "Unsupported command provided: $COMMAND"
