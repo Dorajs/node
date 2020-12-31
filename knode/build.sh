@@ -57,10 +57,12 @@ PREFIX="$OUTPUT"/"${ABI}"
 mkdir -p "$PREFIX"
 
 BUILD_DIR="$PWD"/build/"$ARCH"
-LINK_DIR=`dirname $PWD`/out
-rm "$LINK_DIR"
+LINK_DIR="$NODE_SOURCE"/out
+if [ -d "$LINK_DIR" ]; then
+  unlink "$LINK_DIR"
+fi
 mkdir -p "$BUILD_DIR"
-ln -s "$BUILD_DIR" `dirname $PWD`/out
+ln -s "$BUILD_DIR" "$LINK_DIR"
 
 export CC_host=$(which gcc)
 export CXX_host=$(which g++)
