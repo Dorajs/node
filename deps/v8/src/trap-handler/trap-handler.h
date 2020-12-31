@@ -18,7 +18,7 @@ namespace trap_handler {
 
 // TODO(eholk): Support trap handlers on other platforms.
 #if V8_TARGET_ARCH_X64 && V8_OS_LINUX && !V8_OS_ANDROID
-#define V8_TRAP_HANDLER_SUPPORTED true
+#define V8_TRAP_HANDLER_SUPPORTED false
 #elif V8_TARGET_ARCH_X64 && V8_OS_WIN
 #define V8_TRAP_HANDLER_SUPPORTED true
 #elif V8_TARGET_ARCH_X64 && V8_OS_MACOSX
