@@ -412,7 +412,9 @@ enum Flags : uint64_t {
   kNoRegisterESMLoader = 1 << 3,
   // Set this flag to make Node.js track "raw" file descriptors, i.e. managed
   // by fs.open() and fs.close(), and close them during FreeEnvironment().
-  kTrackUnmanagedFds = 1 << 4
+  kTrackUnmanagedFds = 1 << 4,
+  // Set the node is embedded
+  kOwnsEmbedded = 1 << 5
 };
 }  // namespace EnvironmentFlags
 
@@ -473,6 +475,8 @@ NODE_EXTERN v8::MaybeLocal<v8::Value> LoadEnvironment(
     const char* main_script_source_utf8,
     std::unique_ptr<InspectorParentHandle> ignored_donotuse_removeme = {});
 NODE_EXTERN void FreeEnvironment(Environment* env);
+
+NODE_EXTERN void MountFile(Environment* env, const char *path, const int mask);
 
 // Set a callback that is called when process.exit() is called from JS,
 // overriding the default handler.

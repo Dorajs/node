@@ -27,6 +27,11 @@
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <iostream>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "node_file-inl.h"
 
 namespace node {
 
@@ -55,6 +60,10 @@ using v8::TryCatch;
 using v8::Undefined;
 using v8::Value;
 using worker::Worker;
+using fs::FSReqAfterScope;
+using fs::FSReqBase;
+using fs::FSReqWrapSync;
+using fs::GetReqWrap;
 
 int const Environment::kNodeContextTag = 0x6e6f64;
 void* const Environment::kNodeContextTagPtr = const_cast<void*>(
@@ -282,14 +291,18 @@ void Environment::CreateProperties() {
   set_process_object(process_object);
 }
 
-std::string GetExecPath(const std::vector<std::string>& argv) {
-  char exec_path_buf[2 * PATH_MAX];
-  size_t exec_path_len = sizeof(exec_path_buf);
+std::string GetExecPath(const std::vector <std::string> &argv, EnvironmentFlags::Flags flags) {
   std::string exec_path;
-  if (uv_exepath(exec_path_buf, &exec_path_len) == 0) {
-    exec_path = std::string(exec_path_buf, exec_path_len);
-  } else {
+  if (flags & EnvironmentFlags::kOwnsEmbedded) {
     exec_path = argv[0];
+  } else {
+    char exec_path_buf[2 * PATH_MAX];
+    size_t exec_path_len = sizeof(exec_path_buf);
+    if (uv_exepath(exec_path_buf, &exec_path_len) == 0) {
+      exec_path = std::string(exec_path_buf, exec_path_len);
+    } else {
+      exec_path = argv[0];
+    }
   }
 
   // On OpenBSD process.execPath will be relative unless we
@@ -308,6 +321,69 @@ std::string GetExecPath(const std::vector<std::string>& argv) {
   return exec_path;
 }
 
+static FileAccessor *sharedInstance = new FileAccessor(); // NOLINT(cert-err58-cpp)
+
+bool FileAccessor::Access(Environment *env, const char *path, int mask, char * realpath) {
+//  fprintf(stdout, "access: %s, mask=%d\n", path, mask);
+
+  char fullp[cwd_.size() + strlen(path) + 8];
+  const char *pth = path;
+  while (*pth == ' ' || *pth == '\t') pth++;
+  if (*pth != '/') {
+    strcpy(fullp, cwd_.c_str());
+    strcpy(fullp + cwd_.size(), "/");
+    strcpy(fullp + cwd_.size() + 1, pth);
+    pth = fullp;
+  }
+  FSReqWrapSync req_wrap;
+  env->PrintSyncTrace();
+  int err = uv_fs_realpath(env->event_loop(), &req_wrap.req, pth, nullptr);
+  const char* link_path;
+  if (err != 0) {
+    link_path = pth;
+  } else {
+    link_path = static_cast<const char*>(req_wrap.req.ptr);
+  }
+  strcpy(realpath, link_path);
+
+  std::string spath(link_path);
+
+//  if (*path != '/') {
+//    spath = cwd_ + '/' + spath;
+//    char buf[PATH_MAX_BYTES];
+//    spath = std::string(realpath(spath.c_str(), buf));
+//  }
+  for (const auto &kv: accesses_) {
+    if (spath.find(kv.first.c_str()) == 0) {
+      return (mask & kv.second) == mask;
+    }
+  }
+  return true;
+}
+
+void FileAccessor::Mount(const char *path, int mask) {
+//  fprintf(stdout, "mount: %s, mask=%d\n", path, mask);
+  accesses_[std::string(path)] = mask;
+}
+
+FileAccessor *FileAccessor::Shared() {
+  return sharedInstance;
+}
+
+std::string FileAccessor::Cwd() {
+  return cwd_;
+}
+
+bool FileAccessor::Chdir(Environment *env, const char *path) {
+//  fprintf(stdout, "chdir: %s\n", path);
+  char fullp[cwd_.size() + strlen(path) + 8];
+  if (Access(env, path, kRead, fullp)) {
+    cwd_ = std::string(fullp);
+    return true;
+  }
+  return false;
+}
+
 Environment::Environment(IsolateData* isolate_data,
                          Isolate* isolate,
                          const std::vector<std::string>& args,
@@ -323,7 +399,7 @@ Environment::Environment(IsolateData* isolate_data,
       timer_base_(uv_now(isolate_data->event_loop())),
       exec_argv_(exec_args),
       argv_(args),
-      exec_path_(GetExecPath(args)),
+      exec_path_(GetExecPath(args, flags)),
       should_abort_on_uncaught_toggle_(
           isolate_,
           1,
@@ -356,9 +432,31 @@ Environment::Environment(IsolateData* isolate_data,
   // easier to modify them after Environment creation. The defaults are
   // part of the per-Isolate option set, for which in turn the defaults are
   // part of the per-process option set.
-  options_.reset(new EnvironmentOptions(*isolate_data->options()->per_env));
+  if (flags_ & EnvironmentFlags::kOwnsEmbedded) {
+    std::vector <std::string> exec_args;
+    std::vector <std::string> v8_args;
+    std::vector <std::string> errors;
+    PerProcessOptions *options = new PerProcessOptions();
+    // copy static env options to isolate env options
+    memcpy(options->per_isolate->per_env.get(), isolate_data->options()->per_env.get(), sizeof(EnvironmentOptions));
+    options_parser::Parse(
+            &argv_,
+            &exec_argv_,
+            &v8_args,
+            options,
+            kDisallowedInEnvironment,
+            &errors);
+    options_ = options->per_isolate->per_env;
+    for (size_t i = 0; i < errors.size(); i++) {
+      fprintf(stderr, "\n%s\n", errors[i].c_str());
+    }
+    accessor_ = new FileAccessor();
+  } else {
+    options_.reset(new EnvironmentOptions(*isolate_data->options()->per_env));
+    accessor_ = FileAccessor::Shared();
+  }
   inspector_host_port_.reset(
-      new ExclusiveAccess<HostPort>(options_->debug_options().host_port));
+          new ExclusiveAccess<HostPort>(options_->debug_options().host_port));
 
   if (!(flags_ & EnvironmentFlags::kOwnsProcessState)) {
     set_abort_on_uncaught_exception(false);

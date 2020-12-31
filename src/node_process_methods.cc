@@ -11,7 +11,7 @@
 #include "uv.h"
 #include "v8-fast-api-calls.h"
 #include "v8.h"
-
+#include "node_file.h"
 #include <vector>
 
 #if HAVE_INSPECTOR
@@ -86,15 +86,19 @@ static void Chdir(const FunctionCallbackInfo<Value>& args) {
   CHECK_EQ(args.Length(), 1);
   CHECK(args[0]->IsString());
   Utf8Value path(env->isolate(), args[0]);
-  int err = uv_chdir(*path);
-  if (err) {
-    // Also include the original working directory, since that will usually
-    // be helpful information when debugging a `chdir()` failure.
-    char buf[PATH_MAX_BYTES];
-    size_t cwd_len = sizeof(buf);
-    uv_cwd(buf, &cwd_len);
-    return env->ThrowUVException(err, "chdir", nullptr, buf, *path);
+  bool success = env->Accessor()->Chdir(env, *path);
+  if (!success) {
+    return env->ThrowError("failed to chdir");
   }
+//  int err = uv_chdir(*path);
+//  if (err) {
+//    // Also include the original working directory, since that will usually
+//    // be helpful information when debugging a `chdir()` failure.
+//    char buf[PATH_MAX_BYTES];
+//    size_t cwd_len = sizeof(buf);
+//    uv_cwd(buf, &cwd_len);
+//    return env->ThrowUVException(err, "chdir", nullptr, buf, *path);
+//  }
 }
 
 inline Local<ArrayBuffer> get_fields_array_buffer(
@@ -133,17 +137,26 @@ static void CPUUsage(const FunctionCallbackInfo<Value>& args) {
 static void Cwd(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
   CHECK(env->has_run_bootstrapping_code());
-  char buf[PATH_MAX_BYTES];
-  size_t cwd_len = sizeof(buf);
-  int err = uv_cwd(buf, &cwd_len);
-  if (err)
-    return env->ThrowUVException(err, "uv_cwd");
+  std::string path = env->Accessor()->Cwd();
+  if (path.size() == 0)
+    return env->ThrowError("failed to get cwd");
 
   Local<String> cwd = String::NewFromUtf8(env->isolate(),
-                                          buf,
+                                          path.c_str(),
                                           NewStringType::kNormal,
-                                          cwd_len).ToLocalChecked();
+                                          path.size()).ToLocalChecked();
   args.GetReturnValue().Set(cwd);
+//  char buf[PATH_MAX_BYTES];
+//  size_t cwd_len = sizeof(buf);
+//  int err = uv_cwd(buf, &cwd_len);
+//  if (err)
+//    return env->ThrowUVException(err, "uv_cwd");
+//
+//  Local<String> cwd = String::NewFromUtf8(env->isolate(),
+//                                          buf,
+//                                          NewStringType::kNormal,
+//                                          cwd_len).ToLocalChecked();
+//  args.GetReturnValue().Set(cwd);
 }
 
 static void Kill(const FunctionCallbackInfo<Value>& args) {
@@ -408,7 +421,8 @@ static void ReallyExit(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
   RunAtExit(env);
   int code = args[0]->Int32Value(env->context()).FromMaybe(0);
-  env->Exit(code);
+  // env->Exit(code);
+  Stop(env);
 }
 
 class FastHrtime : public BaseObject {
