@@ -5720,11 +5720,11 @@ bool v8::V8::Initialize(const int build_config) {
 #if V8_OS_LINUX || V8_OS_MACOSX
 bool TryHandleWebAssemblyTrapPosix(int sig_code, siginfo_t* info,
                                    void* context) {
-#if V8_TARGET_ARCH_X64 && !V8_OS_ANDROID
-  return i::trap_handler::TryHandleSignal(sig_code, info, context);
-#else
+// #if V8_TARGET_ARCH_X64 && !V8_OS_ANDROID
+//   return i::trap_handler::TryHandleSignal(sig_code, info, context);
+// #else
   return false;
-#endif
+// #endif
 }
 
 bool V8::TryHandleSignal(int signum, void* info, void* context) {
