@@ -199,6 +199,8 @@ def headers(action):
       'deps/zlib/zlib.h',
     ], 'include/node/')
 
+  subdir_files('deps/cares/include', 'include/node/', action)
+
 def run(args):
   global node_prefix, install_path, target_defaults, variables
 
