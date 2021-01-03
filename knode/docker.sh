@@ -3,35 +3,30 @@
 set -e
 set -x
 
-# supported arch:
-# - arm
-# - arm64
-# - x86
-# - x86_64
-
 if [ $# -lt 3 ]; then
   echo "$0 should have at least 3 parameters: command, target_arch, output"
   exit 1
 fi
-set -e
-set -x
 
 COMMAND=$1
 ARCH=$2
 OUTPUT=$3
+mkdir -p "$OUTPUT"
 
 NODE_SOURCE=`dirname $PWD`
 IMAGE_NAME=ndk20b
 
-
-mkdir -p "$OUTPUT"
-
 case $COMMAND in
-configure)
-  # --platform linux/386
-  # buildx
+build)
   docker -D build -t "$IMAGE_NAME" -f "Dockerfile" .
-
+  ;;
+clean)
+  docker container run -it \
+    --mount type=bind,source="$NODE_SOURCE",target=/node \
+    --mount type=bind,source="$OUTPUT",target=/output \
+    $IMAGE_NAME ./build.sh clean "$ARCH" /output
+  ;;
+configure)
   docker container run -it \
     --mount type=bind,source="$NODE_SOURCE",target=/node \
     --mount type=bind,source="$OUTPUT",target=/output \

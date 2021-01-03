@@ -8,12 +8,13 @@
 # modules with npm. Also, don't forget to set the arch in npm config using
 # 'npm config set arch=<arch>'
 
+set -e
+set -x
+
 if [ $# -lt 3 ]; then
   echo "$0 should have at least 3 parameters: command, target_arch, output"
   exit 1
 fi
-set -e
-set -x
 
 COMMAND=$1
 ARCH=$2
@@ -109,12 +110,13 @@ GYP_DEFINES+=" android_target_arch=$ARCH"
 GYP_DEFINES+=" host_os=$HOST_OS OS=android"
 export GYP_DEFINES
 
-
 cd $NODE_SOURCE
 
 case $COMMAND in
-configure)
+clean)
   make clean
+  ;;
+configure)
   ./configure \
     --dest-cpu=$DEST_CPU \
     --dest-os=android \
@@ -137,7 +139,6 @@ configure)
   # --build-v8-with-gn \
   # --without-inspector \
 make)
-
   make -j${WORKER_COUNT}
   make install
   ;;
