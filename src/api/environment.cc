@@ -398,6 +398,10 @@ void FreeEnvironment(Environment* env) {
   delete env;
 }
 
+NODE_EXTERN void MountFile(Environment* env, const char *path, const int mask) {
+  env->VFS()->Mount(path, mask);
+}
+
 NODE_EXTERN std::unique_ptr<InspectorParentHandle> GetInspectorParentHandle(
     Environment* env,
     ThreadId thread_id,

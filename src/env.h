@@ -41,6 +41,7 @@
 #include "util.h"
 #include "uv.h"
 #include "v8.h"
+#include "node_vfs.h"
 
 #include <array>
 #include <atomic>
@@ -957,6 +958,7 @@ class Environment : public MemoryRetainer {
   void MemoryInfo(MemoryTracker* tracker) const override;
 
   EnvSerializeInfo Serialize(v8::SnapshotCreator* creator);
+  fs::VirtualFileSystem* VFS() { return vfs_; }
   void CreateProperties();
   void DeserializeProperties(const EnvSerializeInfo* info);
 
@@ -1560,6 +1562,8 @@ class Environment : public MemoryRetainer {
   // a given pointer.
   std::unordered_map<char*, std::unique_ptr<v8::BackingStore>>
       released_allocated_buffers_;
+  
+  fs::VirtualFileSystem* vfs_;
 };
 
 }  // namespace node

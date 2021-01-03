@@ -64,6 +64,7 @@ using fs::FSReqAfterScope;
 using fs::FSReqBase;
 using fs::FSReqWrapSync;
 using fs::GetReqWrap;
+using fs::VirtualFileSystem;
 
 int const Environment::kNodeContextTag = 0x6e6f64;
 void* const Environment::kNodeContextTagPtr = const_cast<void*>(
@@ -387,11 +388,10 @@ Environment::Environment(IsolateData* isolate_data,
     for (size_t i = 0; i < errors.size(); i++) {
       fprintf(stderr, "\n%s\n", errors[i].c_str());
     }
-    accessor_ = new FileAccessor();
   } else {
     options_.reset(new EnvironmentOptions(*isolate_data->options()->per_env));
-    accessor_ = FileAccessor::Shared();
   }
+  vfs_ = new VirtualFileSystem(isolate_data->event_loop());
   inspector_host_port_.reset(
           new ExclusiveAccess<HostPort>(options_->debug_options().host_port));
 
