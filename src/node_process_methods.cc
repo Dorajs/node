@@ -408,7 +408,8 @@ static void ReallyExit(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
   RunAtExit(env);
   int code = args[0]->Int32Value(env->context()).FromMaybe(0);
-  env->Exit(code);
+  // env->Exit(code);
+  Stop(env);
 }
 
 class FastHrtime : public BaseObject {
