@@ -8,8 +8,8 @@
 # modules with npm. Also, don't forget to set the arch in npm config using
 # 'npm config set arch=<arch>'
 
-if [ $# -lt 2 ]; then
-  echo "$0 should have at least 2 parameters: command, target_arch, output"
+if [ $# -lt 3 ]; then
+  echo "$0 should have at least 3 parameters: command, target_arch, output"
   exit 1
 fi
 set -e
@@ -130,7 +130,7 @@ configure)
     --without-dtrace \
     --with-intl=none \
     --shared \
-    --release-urlbase=https://github.com/dorajs/node
+    --release-urlbase=https://github.com/dorajs/node/
   ;;
   # --without-intl \
   # --verbose \
