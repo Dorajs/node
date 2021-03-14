@@ -293,14 +293,14 @@ Local<Value> CheckedPath(node::Environment *env, Local<Value> path, int mask) {
   Context::Scope contextScope(context);
 
   CHECK_NOT_NULL(*path);
-  char real_path[PATH_MAX_BYTES];
+  char realPath[PATH_MAX_BYTES];
   BufferValue buffer(isolate, path);
-  if (!env->VFS()->Access(*buffer, mask, real_path)) {
+  if (!env->VFS()->Access(*buffer, mask, realPath)) {
     env->ThrowError("access denied (EACCES)");
   }
-  Local<String> v8Path = String::NewFromUtf8(env->isolate(), realpath,
+  Local<String> v8Path = String::NewFromUtf8(env->isolate(), realPath,
                                              v8::NewStringType::kNormal,
-                                             strlen(realpath)).ToLocalChecked();
+                                             strlen(realPath)).ToLocalChecked();
   return handleScope.Escape(v8Path);
 }
 

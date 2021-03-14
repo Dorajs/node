@@ -12,6 +12,11 @@
 namespace node {
 namespace fs {
 
+struct MountNode {
+  std::string source;
+  int mode;
+};
+
 class VirtualFileSystem {
  public:
   static const int kNone = 0;
@@ -22,19 +27,22 @@ class VirtualFileSystem {
 
   bool Access(const char* path, int mask, char* real_path);
 
-  void Mount(const char* path, int mask);
+  void Mount(const char* source, const char* target, int mask);
+
+  void Chroot(const char* path);
 
   std::string Cwd();
 
   bool Chdir(const char* path);
 
  private:
-  std::map<const std::string, int, std::greater<std::string>> accesses_;
+  std::map<const std::string, MountNode, std::greater<std::string>> nodes_;
   std::string cwd_;
   uv_loop_t* loop_;
+  std::string root_;
 };
 
-}// namespace fs
-}// namespace node
+}  // namespace fs
+}  // namespace node
 
 #endif  // NODE_VIRTUAL_FILE_SYSTEM_H

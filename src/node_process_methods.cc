@@ -139,25 +139,25 @@ static void Cwd(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
   CHECK(env->has_run_bootstrapping_code());
   std::string path = env->VFS()->Cwd();
-  if (path.size() == 0)
-    return env->ThrowError("failed to get cwd, permission denied");
-
-  Local<String> cwd = String::NewFromUtf8(env->isolate(),
+  if (path.size() > 0) {
+    Local<String> cwd = String::NewFromUtf8(env->isolate(),
                                           path.c_str(),
                                           NewStringType::kNormal,
                                           path.size()).ToLocalChecked();
-  args.GetReturnValue().Set(cwd);
-//  char buf[PATH_MAX_BYTES];
-//  size_t cwd_len = sizeof(buf);
-//  int err = uv_cwd(buf, &cwd_len);
-//  if (err)
-//    return env->ThrowUVException(err, "uv_cwd");
-//
-//  Local<String> cwd = String::NewFromUtf8(env->isolate(),
-//                                          buf,
-//                                          NewStringType::kNormal,
-//                                          cwd_len).ToLocalChecked();
-//  args.GetReturnValue().Set(cwd);
+    args.GetReturnValue().Set(cwd);
+  } else {
+    char buf[PATH_MAX_BYTES];
+    size_t cwd_len = sizeof(buf);
+    int err = uv_cwd(buf, &cwd_len);
+    if (err)
+      return env->ThrowUVException(err, "uv_cwd");
+
+    Local<String> cwd = String::NewFromUtf8(env->isolate(),
+                                            buf,
+                                            NewStringType::kNormal,
+                                            cwd_len).ToLocalChecked();
+    args.GetReturnValue().Set(cwd);
+  }
 }
 
 static void Kill(const FunctionCallbackInfo<Value>& args) {
