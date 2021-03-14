@@ -89,7 +89,7 @@ static void Chdir(const FunctionCallbackInfo<Value>& args) {
   // Update for embedded mode and vfs
   bool success = env->VFS()->Chdir(*path);
   if (!success) {
-    return env->ThrowError("failed to chdir, permission denied");
+    return env->ThrowError("fail to chdir, permission denied");
   }
 //  int err = uv_chdir(*path);
 //  if (err) {

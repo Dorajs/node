@@ -476,7 +476,8 @@ NODE_EXTERN v8::MaybeLocal<v8::Value> LoadEnvironment(
     std::unique_ptr<InspectorParentHandle> ignored_donotuse_removeme = {});
 NODE_EXTERN void FreeEnvironment(Environment* env);
 
-NODE_EXTERN void MountFile(Environment* env, const char *path, const int mask);
+NODE_EXTERN void Mount(Environment* env, const char *src, const char *dst, const int mode);
+NODE_EXTERN void Chroot(Environment* env, const char *path);
 
 // Set a callback that is called when process.exit() is called from JS,
 // overriding the default handler.

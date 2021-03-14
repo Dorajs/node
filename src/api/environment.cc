@@ -398,8 +398,12 @@ void FreeEnvironment(Environment* env) {
   delete env;
 }
 
-NODE_EXTERN void MountFile(Environment* env, const char *path, const int mask) {
-  env->VFS()->Mount(path, mask);
+NODE_EXTERN void Mount(Environment* env, const char *src, const char *dst, const int mode) {
+  env->VFS()->Mount(src, dst, mode);
+}
+
+NODE_EXTERN void Chroot(Environment* env, const char *path) {
+  env->VFS()->Chroot(path);
 }
 
 NODE_EXTERN std::unique_ptr<InspectorParentHandle> GetInspectorParentHandle(

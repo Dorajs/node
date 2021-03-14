@@ -13,7 +13,7 @@ namespace node {
 namespace fs {
 
 struct MountNode {
-  std::string source;
+  std::string src;
   int mode;
 };
 
@@ -25,9 +25,9 @@ class VirtualFileSystem {
 
   VirtualFileSystem(uv_loop_t* loop);
 
-  bool Access(const char* path, int mask, char* real_path);
+  bool Access(const char* path, int mode, char* realPath);
 
-  void Mount(const char* source, const char* target, int mask);
+  void Mount(const char* source, const char* target, int mode);
 
   void Chroot(const char* path);
 
@@ -40,6 +40,8 @@ class VirtualFileSystem {
   std::string cwd_;
   uv_loop_t* loop_;
   std::string root_;
+
+  std::string Resolve(const char *path);
 };
 
 }  // namespace fs
