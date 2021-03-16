@@ -5,15 +5,15 @@
 #ifndef NODE_VIRTUAL_FILE_SYSTEM_H
 #define NODE_VIRTUAL_FILE_SYSTEM_H
 
-#include <map>
+#include <vector>
 #include <string>
-#include "uv.h"
 
 namespace node {
 namespace fs {
 
-struct MountNode {
+struct MountPoint {
   std::string src;
+  std::string dst;
   int mode;
 };
 
@@ -23,22 +23,22 @@ class VirtualFileSystem {
   static const int kRead = 1;
   static const int kWrite = 2;
 
-  VirtualFileSystem(uv_loop_t* loop);
+  VirtualFileSystem();
 
   bool Access(const char* path, int mode, char* realPath);
 
-  void Mount(const char* source, const char* target, int mode);
+  void Mount(const char* src, const char* dst, int mode);
 
   void Chroot(const char* path);
 
-  std::string Cwd();
-
   bool Chdir(const char* path);
 
+  std::string Cwd();
+
  private:
-  std::map<const std::string, MountNode, std::greater<std::string>> nodes_;
+  // key is the dst path
+  std::vector<MountPoint> points_;
   std::string cwd_;
-  uv_loop_t* loop_;
   std::string root_;
 
   std::string Resolve(const char *path);

@@ -391,7 +391,7 @@ Environment::Environment(IsolateData* isolate_data,
   } else {
     options_.reset(new EnvironmentOptions(*isolate_data->options()->per_env));
   }
-  vfs_ = new VirtualFileSystem(isolate_data->event_loop());
+  vfs_ = new VirtualFileSystem();
   inspector_host_port_.reset(
           new ExclusiveAccess<HostPort>(options_->debug_options().host_port));
 

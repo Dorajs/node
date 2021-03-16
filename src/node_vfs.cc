@@ -2,51 +2,43 @@
 // Created by linroid on 1/3/21.
 //
 
-#include "node_vfs.h"
 #include <cstring>
 #include <sstream>
 #include <vector>
+#include "node_vfs.h"
 #include "node_file.h"
 
-constexpr char separator = '/';
-
 namespace node {
+
+constexpr char separator = kPathSeparator;
+
 namespace fs {
 
-VirtualFileSystem::VirtualFileSystem(uv_loop_t *loop) : loop_(loop) {}
+VirtualFileSystem::VirtualFileSystem() {}
 
 bool VirtualFileSystem::Access(const char *path, int mode, char *realPath) {
-  fprintf(stdout, "access: %s, mode=%d, root=%s", path, mode, root_.c_str());
   if (root_.size() == 0) {
     // the chroot() doesn't get called
     strcpy(realPath, path);
     return true;
   }
-
   std::string absolutePath = Resolve(path);
-  for (const auto &entry : nodes_) {
-    if (absolutePath.find(entry.first) == 0) {
-      if ((mode & entry.second.mode) == mode) {
-        std::string src = entry.second.src + absolutePath.substr(entry.first.length());
-        fprintf(stdout, "path=%s, src=%s", path, src.c_str());
-        strcpy(realPath, src.c_str());
-        // env->PrintSyncTrace();
-        // FSReqWrapSync req_wrap;
-        // int err = uv_fs_realpath(loop_, &req_wrap.req, src.c_str(), nullptr);
-        // if (err == 0) {
-        //   fprintf(stdout, "real path is %s", static_cast<const char *>(req_wrap.req.ptr));
-        //   strcpy(realPath, static_cast<const char *>(req_wrap.req.ptr));
-        // } else {
-        //   strcpy(realPath, absolutePath.c_str());
-        // }
+  for (const auto &point : points_) {
+    if (absolutePath.find(point.dst) == 0) {
+      if ((mode & point.mode) == mode) {
+        auto subPath = absolutePath.substr(point.dst.length());
+        strcpy(realPath, (point.src + subPath).c_str());
+        fprintf(stdout, "access %s -> %s, mode=%d\n", path, realPath, mode);
         return true;
       } else {
-        fprintf(stderr, "permission denied: %s, allowed: %d, request: %d", path, entry.second.mode, mode);
+        fprintf(stderr, "permission denied: %s, allowed: %d, request: %d", path, point.mode, mode);
         return false;
       }
     }
   }
-  return false;
+  strcpy(realPath, (root_ + absolutePath).c_str());
+  fprintf(stdout, "fallback: path=%s, realPath=%s\n", path, realPath);
+  return true;
 }
 
 std::string VirtualFileSystem::Resolve(const char *path) {
@@ -59,7 +51,6 @@ std::string VirtualFileSystem::Resolve(const char *path) {
     }
   }
   stream << path;
-  std::cout << stream.str() << std::endl;
 
   // split the path by separator
   std::vector <std::string> segments;
@@ -97,17 +88,28 @@ std::string VirtualFileSystem::Resolve(const char *path) {
 
 void VirtualFileSystem::Chroot(const char *path) {
   fprintf(stdout, "chroot: %s\n", path);
+  if (!root_.empty()) {
+    fprintf(stderr, "chroot has already been called: %s\n", root_.c_str());
+    abort();
+  }
   root_ = std::string(path);
   cwd_ = std::string(path);
-  nodes_[std::string("/")] = MountNode{.src = root_, .mode = kRead | kWrite};
 }
 
-void VirtualFileSystem::Mount(const char *src,
-                              const char *dst,
-                              int mode) {
-  fprintf(stdout, "mount: %s->%s, mode=%d\n", src, dst, mode);
+void VirtualFileSystem::Mount(const char *src, const char *dst, int mode) {
+  fprintf(stdout, "mount: src=%s, dst=%s, mode=%d\n", src, dst, mode);
 
-  nodes_[std::string(dst)] = MountNode{.src = std::string(src), .mode = mode};
+  MountPoint point{
+      .src = std::string(src),
+      .dst = std::string(dst),
+      .mode = mode
+  };
+  points_.push_back(point);
+  // TODO: replace to insert operation
+  std::sort(points_.begin(), points_.end(),
+            [](MountPoint const &a, MountPoint const &b) {
+              return a.dst > b.dst;
+            });
 }
 
 std::string VirtualFileSystem::Cwd() {
@@ -115,12 +117,13 @@ std::string VirtualFileSystem::Cwd() {
 }
 
 bool VirtualFileSystem::Chdir(const char *path) {
-  fprintf(stdout, "chdir: %s\n", path);
-  char realPath[cwd_.size() + strlen(path) + 8];
+  char realPath[PATH_MAX_BYTES];
   if (Access(path, kRead, realPath)) {
-    cwd_ = std::string(realPath);
+    fprintf(stdout, "chdir(%s): realPath=%s\n", path, realPath);
+    cwd_ = std::string(path);
     return true;
   }
+  fprintf(stderr, "chdir failed: %s\n", path);
   return false;
 }
 
