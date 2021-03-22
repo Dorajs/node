@@ -22,21 +22,24 @@ build)
   ;;
 clean)
   docker container run -it \
-    --mount type=bind,source="$NODE_SOURCE",target=/node \
+    --mount type=bind,source="$NODE_SOURCE",target="$NODE_SOURCE" \
     --mount type=bind,source="$OUTPUT",target=/output \
+    -w "${NODE_SOURCE}"/knode \
     $IMAGE_NAME ./build.sh clean "$ARCH" /output
   ;;
 configure)
   docker container run -it \
-    --mount type=bind,source="$NODE_SOURCE",target=/node \
+    --mount type=bind,source="$NODE_SOURCE",target="$NODE_SOURCE" \
     --mount type=bind,source="$OUTPUT",target=/output \
+    -w "${NODE_SOURCE}"/knode \
     $IMAGE_NAME ./build.sh configure "$ARCH" /output
   ;;
 make)
   echo building "$ARCH"
   docker container run -it \
-    --mount type=bind,source="$NODE_SOURCE",target=/node \
+    --mount type=bind,source="$NODE_SOURCE",target="$NODE_SOURCE" \
     --mount type=bind,source="$OUTPUT",target=/output \
+    -w "${NODE_SOURCE}"/knode \
     $IMAGE_NAME ./build.sh make "$ARCH" /output
   ;;
 *)

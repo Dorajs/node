@@ -29,4 +29,3 @@ RUN apt-get install python g++ gcc make gcc-multilib g++-multilib lib32z1 -y
 # Set environments
 RUN mkdir -p /output
 ENV PATH ${PATH}:${ANDROID_NDK_HOME}
-WORKDIR /node/knode
