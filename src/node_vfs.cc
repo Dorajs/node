@@ -37,8 +37,31 @@ bool VirtualFileSystem::Access(const char *path, int mode, char *realPath) {
     }
   }
   strcpy(realPath, (root_ + absolutePath).c_str());
-  fprintf(stdout, "fallback: path=%s, realPath=%s\n", path, realPath);
+  fprintf(stdout, "fallback: path=%s, realPath=%s, mode=%d\n", path, realPath, mode);
   return true;
+}
+
+std::string VirtualFileSystem::Path(const char* path) {
+  if (root_.size() == 0) {
+    return std::string(path);
+  }
+  std::string absolutePath = Resolve(path);
+
+  std::sort(points_.begin(), points_.end(),
+            [](MountPoint const &a, MountPoint const &b) {
+              return a.src > b.src;
+            });
+  for (const auto &point : points_) {
+    if (absolutePath.find(point.src) == 0) {
+      auto subPath = absolutePath.substr(point.src.length());
+      return point.dst + subPath;
+    }
+  }
+  std::sort(points_.begin(), points_.end(),
+            [](MountPoint const &a, MountPoint const &b) {
+              return a.dst > b.dst;
+            });
+  return std::string(path);
 }
 
 std::string VirtualFileSystem::Resolve(const char *path) {

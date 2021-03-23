@@ -27,6 +27,8 @@ class VirtualFileSystem {
 
   bool Access(const char* path, int mode, char* realPath);
 
+  std::string Path(const char* path);
+
   void Mount(const char* src, const char* dst, int mode);
 
   void Chroot(const char* path);

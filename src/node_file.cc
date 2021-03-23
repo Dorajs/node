@@ -754,8 +754,9 @@ void AfterStringPath(uv_fs_t* req) {
   Local<Value> error;
 
   if (after.Proceed()) {
+    std::string pathInVfs = req_wrap->env()->VFS()->Path(req->path);
     link = StringBytes::Encode(req_wrap->env()->isolate(),
-                               req->path,
+                               pathInVfs.c_str(),
                                req_wrap->encoding(),
                                &error);
     if (link.IsEmpty())
@@ -773,8 +774,9 @@ void AfterStringPtr(uv_fs_t* req) {
   Local<Value> error;
 
   if (after.Proceed()) {
+    std::string pathInVfs = req_wrap->env()->VFS()->Path(static_cast<const char*>(req->ptr));
     link = StringBytes::Encode(req_wrap->env()->isolate(),
-                               static_cast<const char*>(req->ptr),
+                               pathInVfs.c_str(),
                                req_wrap->encoding(),
                                &error);
     if (link.IsEmpty())
@@ -1645,9 +1647,11 @@ static void RealPath(const FunctionCallbackInfo<Value>& args) {
 
     const char* link_path = static_cast<const char*>(req_wrap_sync.req.ptr);
 
+    std::string virtual_path = env->VFS()->Path(link_path);
+
     Local<Value> error;
     MaybeLocal<Value> rc = StringBytes::Encode(isolate,
-                                               link_path,
+                                               virtual_path.c_str(),
                                                encoding,
                                                &error);
     if (rc.IsEmpty()) {
@@ -1656,7 +1660,7 @@ static void RealPath(const FunctionCallbackInfo<Value>& args) {
       return;
     }
 
-    args.GetReturnValue().Set(rc.ToLocalChecked());
+    args.GetReturnValue().Set(CheckedPath(env, rc.ToLocalChecked(), VirtualFileSystem::kNone));
   }
 }
 
@@ -2325,7 +2329,7 @@ static void UTimes(const FunctionCallbackInfo<Value>& args) {
   const int argc = args.Length();
   CHECK_GE(argc, 3);
 
-  BufferValue path(env->isolate(), args[0]);
+  BufferValue path(env->isolate(), CheckedPath(env, args[0], VirtualFileSystem::kRead));
   CHECK_NOT_NULL(*path);
 
   CHECK(args[1]->IsNumber());
@@ -2413,7 +2417,7 @@ static void Mkdtemp(const FunctionCallbackInfo<Value>& args) {
   const int argc = args.Length();
   CHECK_GE(argc, 2);
 
-  BufferValue tmpl(isolate, args[0]);
+  BufferValue tmpl(isolate, CheckedPath(env, args[0], VirtualFileSystem::kRead | VirtualFileSystem::kWrite));
   CHECK_NOT_NULL(*tmpl);
 
   const enum encoding encoding = ParseEncoding(isolate, args[1], UTF8);
@@ -2429,11 +2433,11 @@ static void Mkdtemp(const FunctionCallbackInfo<Value>& args) {
     SyncCall(env, args[3], &req_wrap_sync, "mkdtemp",
              uv_fs_mkdtemp, *tmpl);
     FS_SYNC_TRACE_END(mkdtemp);
-    const char* path = req_wrap_sync.req.path;
+    std::string path = env->VFS()->Path(req_wrap_sync.req.path);
 
     Local<Value> error;
     MaybeLocal<Value> rc =
-        StringBytes::Encode(isolate, path, encoding, &error);
+        StringBytes::Encode(isolate, path.c_str(), encoding, &error);
     if (rc.IsEmpty()) {
       Local<Object> ctx = args[3].As<Object>();
       ctx->Set(env->context(), env->error_string(), error).Check();
