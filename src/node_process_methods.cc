@@ -69,7 +69,8 @@ Mutex umask_mutex;
 #define NANOS_PER_SEC 1000000000
 
 static void Abort(const FunctionCallbackInfo<Value>& args) {
-  Abort();
+  Environment* env = Environment::GetCurrent(args);
+  env->Exit(0);
 }
 
 // For internal testing only, not exposed to userland.
