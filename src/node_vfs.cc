@@ -3,6 +3,7 @@
 //
 
 #include <cstring>
+#include <string>
 #include <sstream>
 #include <vector>
 #include "node_vfs.h"
@@ -16,52 +17,46 @@ namespace fs {
 
 VirtualFileSystem::VirtualFileSystem() {}
 
-bool VirtualFileSystem::Access(const char *path, int mode, char *realPath) {
-  if (root_.size() == 0) {
+std::string VirtualFileSystem::Access(const char *path, int mode) {
+  if (root_.empty()) {
     // the chroot() doesn't get called
-    strcpy(realPath, path);
-    return true;
+    return std::string(path);
   }
   std::string absolutePath = Resolve(path);
   for (const auto &point : points_) {
     if (absolutePath.find(point.dst) == 0) {
       if ((mode & point.mode) == mode) {
         auto subPath = absolutePath.substr(point.dst.length());
-        strcpy(realPath, (point.src + subPath).c_str());
-        fprintf(stdout, "access %s -> %s, mode=%d\n", path, realPath, mode);
-        return true;
+        return point.src + subPath;
       } else {
         fprintf(stderr, "permission denied: %s, allowed: %d, request: %d", path, point.mode, mode);
-        return false;
+        return std::string();
       }
     }
   }
-  strcpy(realPath, (root_ + absolutePath).c_str());
-  fprintf(stdout, "fallback: path=%s, realPath=%s, mode=%d\n", path, realPath, mode);
-  return true;
+  return root_ + absolutePath;
 }
 
-std::string VirtualFileSystem::Path(const char* path) {
-  if (root_.size() == 0) {
-    return std::string(path);
-  }
-  std::string absolutePath = Resolve(path);
-
-  std::sort(points_.begin(), points_.end(),
-            [](MountPoint const &a, MountPoint const &b) {
-              return a.src > b.src;
-            });
-  for (const auto &point : points_) {
-    if (absolutePath.find(point.src) == 0) {
-      auto subPath = absolutePath.substr(point.src.length());
-      return point.dst + subPath;
+std::string VirtualFileSystem::Path(const char *path) {
+  std::string result(path);
+  if (!root_.empty()) {
+    std::string absolutePath = Resolve(path);
+    std::vector <MountPoint> points(points_);
+    std::sort(points.begin(), points.end(),
+              [](MountPoint const &a, MountPoint const &b) {
+                return a.src > b.src;
+              });
+    for (const auto &point : points) {
+      if (absolutePath.find(point.src) == 0) {
+        auto subPath = absolutePath.substr(point.src.length());
+        result = point.dst + subPath;
+        break;
+      }
     }
   }
-  std::sort(points_.begin(), points_.end(),
-            [](MountPoint const &a, MountPoint const &b) {
-              return a.dst > b.dst;
-            });
-  return std::string(path);
+  fprintf(stdout, "get virtual path: %s -> %s", path, result.c_str());
+  return result;
+
 }
 
 std::string VirtualFileSystem::Resolve(const char *path) {
@@ -128,7 +123,6 @@ void VirtualFileSystem::Mount(const char *src, const char *dst, int mode) {
       .mode = mode
   };
   points_.push_back(point);
-  // TODO: replace to insert operation
   std::sort(points_.begin(), points_.end(),
             [](MountPoint const &a, MountPoint const &b) {
               return a.dst > b.dst;
@@ -140,14 +134,14 @@ std::string VirtualFileSystem::Cwd() {
 }
 
 bool VirtualFileSystem::Chdir(const char *path) {
-  char realPath[PATH_MAX_BYTES];
-  if (Access(path, kRead, realPath)) {
-    fprintf(stdout, "chdir(%s): realPath=%s\n", path, realPath);
-    cwd_ = std::string(path);
-    return true;
+  std::string realPath = Access(path, kRead);
+  if (realPath.empty()) {
+    fprintf(stderr, "chdir(%s): failed\n", path);
+    return false;
   }
-  fprintf(stderr, "chdir failed: %s\n", path);
-  return false;
+  fprintf(stdout, "chdir(%s): realPath=%s\n", path, realPath.c_str());
+  cwd_ = std::string(path);
+  return true;
 }
 
 }  // namespace fs

@@ -18,28 +18,39 @@ struct MountPoint {
 };
 
 class VirtualFileSystem {
- public:
+public:
   static const int kNone = 0;
   static const int kRead = 1;
   static const int kWrite = 2;
 
   VirtualFileSystem();
 
-  bool Access(const char* path, int mode, char* realPath);
+  /**
+   * Access the virtual path with special permission mode
+   * @param path the virtual path
+   * @param mode permission
+   * @return the real path on host, empty if no permission to access the path
+   */
+  std::string Access(const char *path, int mode);
 
-  std::string Path(const char* path);
+  /**
+   * Convert the real path to virtual path
+   * @param path the virtual path
+   * @return
+   */
+  std::string Path(const char *path);
 
-  void Mount(const char* src, const char* dst, int mode);
+  void Mount(const char *src, const char *dst, int mode);
 
-  void Chroot(const char* path);
+  void Chroot(const char *path);
 
-  bool Chdir(const char* path);
+  bool Chdir(const char *path);
 
   std::string Cwd();
 
- private:
+private:
   // key is the dst path
-  std::vector<MountPoint> points_;
+  std::vector <MountPoint> points_;
   std::string cwd_;
   std::string root_;
 
