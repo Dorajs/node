@@ -1144,7 +1144,10 @@ static void Symlink(const FunctionCallbackInfo<Value>& args) {
   const int argc = args.Length();
   CHECK_GE(argc, 4);
 
-  BufferValue target(isolate, CheckedPath(env, args[0], VirtualFileSystem::kRead|VirtualFileSystem::kWrite, "Symlink(target)"));
+  BufferValue target(isolate, args[0]);
+  if ((*target)[0] == '/') {
+    target = BufferValue(isolate, CheckedPath(env, args[0], VirtualFileSystem::kRead|VirtualFileSystem::kWrite, "Symlink(target)"));
+  }
   BufferValue path(isolate, CheckedPath(env, args[1], VirtualFileSystem::kRead | VirtualFileSystem::kWrite, "Symlink(path)"));
   // BufferValue target(isolate, args[0]);
   // CHECK_NOT_NULL(*target);
