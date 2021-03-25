@@ -1146,7 +1146,7 @@ static void Symlink(const FunctionCallbackInfo<Value>& args) {
 
   BufferValue target(isolate, args[0]);
   if ((*target)[0] == '/') {
-    target = BufferValue(isolate, CheckedPath(env, args[0], VirtualFileSystem::kRead|VirtualFileSystem::kWrite, "Symlink(target)"));
+    target = BufferValue(isolate, CheckedPath(env, args[0], VirtualFileSystem::kRead | VirtualFileSystem::kWrite, "Symlink(target)"));
   }
   BufferValue path(isolate, CheckedPath(env, args[1], VirtualFileSystem::kRead | VirtualFileSystem::kWrite, "Symlink(path)"));
   // BufferValue target(isolate, args[0]);
@@ -1251,8 +1251,8 @@ static void Rename(const FunctionCallbackInfo<Value>& args) {
   const int argc = args.Length();
   CHECK_GE(argc, 3);
 
-  BufferValue old_path(isolate, CheckedPath(env, args[0], VirtualFileSystem::kRead|VirtualFileSystem::kWrite, "Rename(old)"));
-  BufferValue new_path(isolate, CheckedPath(env, args[1], VirtualFileSystem::kRead|VirtualFileSystem::kWrite, "Rename(new)"));
+  BufferValue old_path(isolate, CheckedPath(env, args[0], VirtualFileSystem::kRead | VirtualFileSystem::kWrite, "Rename(old)"));
+  BufferValue new_path(isolate, CheckedPath(env, args[1], VirtualFileSystem::kRead | VirtualFileSystem::kWrite, "Rename(new)"));
   // BufferValue old_path(isolate, args[0]);
   // CHECK_NOT_NULL(*old_path);
   // BufferValue new_path(isolate, args[1]);
@@ -1349,7 +1349,7 @@ static void Unlink(const FunctionCallbackInfo<Value>& args) {
   const int argc = args.Length();
   CHECK_GE(argc, 2);
 
-  BufferValue path(env->isolate(), CheckedPath(env, args[0], VirtualFileSystem::kRead|VirtualFileSystem::kWrite, "Unlink"));
+  BufferValue path(env->isolate(), CheckedPath(env, args[0], VirtualFileSystem::kRead | VirtualFileSystem::kWrite, "Unlink"));
   // BufferValue path(env->isolate(), args[0]);
   CHECK_NOT_NULL(*path);
 
@@ -1372,7 +1372,7 @@ static void RMDir(const FunctionCallbackInfo<Value>& args) {
   const int argc = args.Length();
   CHECK_GE(argc, 2);
 
-  BufferValue path(env->isolate(), CheckedPath(env, args[0], VirtualFileSystem::kRead|VirtualFileSystem::kWrite, "RMDir"));
+  BufferValue path(env->isolate(), CheckedPath(env, args[0], VirtualFileSystem::kRead | VirtualFileSystem::kWrite, "RMDir"));
   // BufferValue path(env->isolate(), args[0]);
   CHECK_NOT_NULL(*path);
 
@@ -1577,7 +1577,7 @@ static void MKDir(const FunctionCallbackInfo<Value>& args) {
   const int argc = args.Length();
   CHECK_GE(argc, 4);
 
-  BufferValue path(env->isolate(), CheckedPath(env, args[0], VirtualFileSystem::kRead|VirtualFileSystem::kWrite, "MKDir"));
+  BufferValue path(env->isolate(), CheckedPath(env, args[0], VirtualFileSystem::kRead | VirtualFileSystem::kWrite, "MKDir"));
   // BufferValue path(env->isolate(), args[0]);
   CHECK_NOT_NULL(*path);
 
@@ -1768,7 +1768,7 @@ static void Open(const FunctionCallbackInfo<Value>& args) {
   CHECK(args[1]->IsInt32());
   const int flags = args[1].As<Int32>()->Value();
 
-  auto access = (flags&O_ACCMODE) == O_RDWR ? VirtualFileSystem::kRead|VirtualFileSystem::kWrite :
+  auto access = (flags&O_ACCMODE) == O_RDWR ? VirtualFileSystem::kRead | VirtualFileSystem::kWrite :
                 (flags&O_ACCMODE) == O_WRONLY ? VirtualFileSystem::kWrite :
                 (flags&O_ACCMODE) == O_RDONLY ? VirtualFileSystem::kRead : VirtualFileSystem::kNone;
   BufferValue path(env->isolate(), CheckedPath(env, args[0], access, "Open"));
@@ -1810,7 +1810,7 @@ static void OpenFileHandle(const FunctionCallbackInfo<Value>& args) {
   CHECK(args[2]->IsInt32());
   const int mode = args[2].As<Int32>()->Value();
 
-  auto access = (flags&O_ACCMODE) == O_RDWR ? VirtualFileSystem::kRead|VirtualFileSystem::kWrite :
+  auto access = (flags&O_ACCMODE) == O_RDWR ? VirtualFileSystem::kRead | VirtualFileSystem::kWrite :
                 (flags&O_ACCMODE) == O_WRONLY ? VirtualFileSystem::kWrite :
                 (flags&O_ACCMODE) == O_RDONLY ? VirtualFileSystem::kRead : VirtualFileSystem::kNone;
 
@@ -2180,7 +2180,7 @@ static void Chmod(const FunctionCallbackInfo<Value>& args) {
   const int argc = args.Length();
   CHECK_GE(argc, 2);
 
-  BufferValue path(env->isolate(), CheckedPath(env, args[0], VirtualFileSystem::kRead|VirtualFileSystem::kWrite, "Chmod"));
+  BufferValue path(env->isolate(), CheckedPath(env, args[0], VirtualFileSystem::kRead | VirtualFileSystem::kWrite, "Chmod"));
   CHECK_NOT_NULL(*path);
 
   CHECK(args[1]->IsInt32());
@@ -2240,7 +2240,7 @@ static void Chown(const FunctionCallbackInfo<Value>& args) {
   const int argc = args.Length();
   CHECK_GE(argc, 3);
 
-  BufferValue path(env->isolate(), CheckedPath(env, args[0], VirtualFileSystem::kRead|VirtualFileSystem::kWrite, "Chown"));
+  BufferValue path(env->isolate(), CheckedPath(env, args[0], VirtualFileSystem::kRead | VirtualFileSystem::kWrite, "Chown"));
   CHECK_NOT_NULL(*path);
 
   CHECK(args[1]->IsUint32());
